@@ -895,6 +895,13 @@ slider */
 	padding: 100px 0 50px 0;
 	padding-top: clamp(50px, 6vw, 100px);
 }
+.slider__title {
+	text-align: center;
+	font-size: clamp(32px, 5vw, 42px);
+	font-weight: 700;
+	color: #ffc700;
+	margin-bottom: 20px;
+}
 
 .inner-controls {
 	margin-top: 20px;
