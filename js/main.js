@@ -147,14 +147,20 @@ const innerTrack = document.getElementById('innerTrack')
 const progress = document.getElementById('progress')
 let slides = document.querySelectorAll('.inner-slide')
 
-// Клонируем первые 3 слайда для бесконечного эффекта
+// Клонируем первые 3 в конец
 for (let i = 0; i < 3; i++) {
   let clone = slides[i].cloneNode(true)
   innerTrack.appendChild(clone)
 }
+// Клонируем последние 3 в начало
+for (let i = slides.length - 3; i < slides.length; i++) {
+  let clone = slides[i].cloneNode(true)
+  innerTrack.insertBefore(clone, innerTrack.firstChild)
+}
+
 slides = document.querySelectorAll('.inner-slide')
 
-let current = 0
+let current = 3 // начинаем с "реального" первого слайда
 let slidesPerView
 let slideWidth
 let autoSlide
@@ -187,37 +193,36 @@ function startProgress() {
   }, 50)
 }
 
-// переход к следующему слайду
 function nextSlide() {
   if (isAnimating) return
   isAnimating = true
   current++
   updateInnerSlider()
 
-  if (current >= slides.length - slidesPerView) {
-    setTimeout(() => {
-      current = 0
+  setTimeout(() => {
+    if (current >= slides.length - 3) {
+      current = 3
       updateInnerSlider(false)
-      isAnimating = false
-    }, 500)
-  } else {
-    setTimeout(() => (isAnimating = false), 500)
-  }
+    }
+    isAnimating = false
+  }, 500)
 
   startProgress()
 }
 
-// переход к предыдущему слайду
 function prevSlide() {
   if (isAnimating) return
   isAnimating = true
   current--
-  if (current < 0) {
-    current = slides.length - slidesPerView
-    updateInnerSlider(false)
-  }
   updateInnerSlider()
-  setTimeout(() => (isAnimating = false), 500)
+
+  setTimeout(() => {
+    if (current < 3) {
+      current = slides.length - 3 - 1
+      updateInnerSlider(false)
+    }
+    isAnimating = false
+  }, 500)
 
   startProgress()
 }
@@ -227,7 +232,6 @@ function startAuto() {
   autoSlide = setInterval(nextSlide, 5000)
   startProgress()
 }
-
 function stopAuto() {
   clearInterval(autoSlide)
 }
@@ -241,13 +245,11 @@ innerTrack.addEventListener('mousedown', e => {
   startX = e.pageX
   stopAuto()
 })
-
 innerTrack.addEventListener('mouseup', e => {
   if (!isDown) return
   let diff = e.pageX - startX
-  if (diff < -50) nextSlide() // влево
-  if (diff > 50) prevSlide() // вправо
-  updateInnerSlider()
+  if (diff < -50) nextSlide()
+  if (diff > 50) prevSlide()
   startAuto()
   isDown = false
 })
@@ -257,13 +259,11 @@ innerTrack.addEventListener('touchstart', e => {
   startX = e.touches[0].clientX
   stopAuto()
 })
-
 innerTrack.addEventListener('touchend', e => {
   if (!isDown) return
   let diff = e.changedTouches[0].clientX - startX
-  if (diff < -50) nextSlide() // свайп влево
-  if (diff > 50) prevSlide() // свайп вправо
-  updateInnerSlider()
+  if (diff < -50) nextSlide()
+  if (diff > 50) prevSlide()
   startAuto()
   isDown = false
 })
