@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
 })
 
 //slider
-// slider
+//slider
 const innerTrack = document.getElementById('innerTrack')
 const progress = document.getElementById('progress')
 let slides = document.querySelectorAll('.inner-slide')
@@ -207,6 +207,21 @@ function nextSlide() {
   startProgress()
 }
 
+// переход к предыдущему слайду
+function prevSlide() {
+  if (isAnimating) return
+  isAnimating = true
+  current--
+  if (current < 0) {
+    current = slides.length - slidesPerView
+    updateInnerSlider(false)
+  }
+  updateInnerSlider()
+  setTimeout(() => (isAnimating = false), 500)
+
+  startProgress()
+}
+
 // авто-слайд
 function startAuto() {
   autoSlide = setInterval(nextSlide, 5000)
@@ -230,7 +245,8 @@ innerTrack.addEventListener('mousedown', e => {
 innerTrack.addEventListener('mouseup', e => {
   if (!isDown) return
   let diff = e.pageX - startX
-  if (diff < -50) nextSlide()
+  if (diff < -50) nextSlide() // влево
+  if (diff > 50) prevSlide() // вправо
   updateInnerSlider()
   startAuto()
   isDown = false
@@ -245,7 +261,8 @@ innerTrack.addEventListener('touchstart', e => {
 innerTrack.addEventListener('touchend', e => {
   if (!isDown) return
   let diff = e.changedTouches[0].clientX - startX
-  if (diff < -50) nextSlide()
+  if (diff < -50) nextSlide() // свайп влево
+  if (diff > 50) prevSlide() // свайп вправо
   updateInnerSlider()
   startAuto()
   isDown = false
