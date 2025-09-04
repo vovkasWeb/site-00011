@@ -58,6 +58,10 @@ html {
 .btn-yello:hover {
 	box-shadow: 0px 4px 15px 0px #ffc70054;
 	background: #ffcb11;
+
+}
+#innerTrack {
+  touch-action: pan-y;
 }
 
 body {

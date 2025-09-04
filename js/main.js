@@ -254,22 +254,20 @@ innerTrack.addEventListener('mouseup', e => {
   isDown = false
 })
 
-// Моб (тач)
-let moveX = 0
+// Моб (iPhone + Android)
 innerTrack.addEventListener('touchstart', e => {
   isDown = true
   startX = e.touches[0].clientX
-  moveX = 0
   stopAuto()
 })
-innerTrack.addEventListener('touchmove', e => {
+innerTrack.addEventListener('touchend', e => {
   if (!isDown) return
-  moveX = e.touches[0].clientX - startX
-})
-innerTrack.addEventListener('touchend', () => {
-  if (!isDown) return
-  if (moveX < -50) nextSlide() // свайп влево
-  if (moveX > 50) prevSlide() // свайп вправо
+  const endX = e.changedTouches[0].clientX
+  const diff = endX - startX
+
+  if (diff < -50) nextSlide() // свайп влево
+  if (diff > 50) prevSlide() // свайп вправо
+
   startAuto()
   isDown = false
 })
