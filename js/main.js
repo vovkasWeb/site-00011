@@ -142,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
 })
 
 //slider
-//slider
 const innerTrack = document.getElementById('innerTrack')
 const progress = document.getElementById('progress')
 let slides = document.querySelectorAll('.inner-slide')
@@ -236,7 +235,8 @@ function stopAuto() {
   clearInterval(autoSlide)
 }
 
-// свайпы
+// --- свайпы ---
+// ПК (мышь)
 let startX = 0
 let isDown = false
 
@@ -254,16 +254,22 @@ innerTrack.addEventListener('mouseup', e => {
   isDown = false
 })
 
+// Моб (тач)
+let moveX = 0
 innerTrack.addEventListener('touchstart', e => {
   isDown = true
   startX = e.touches[0].clientX
+  moveX = 0
   stopAuto()
 })
-innerTrack.addEventListener('touchend', e => {
+innerTrack.addEventListener('touchmove', e => {
   if (!isDown) return
-  let diff = e.changedTouches[0].clientX - startX
-  if (diff < -50) nextSlide()
-  if (diff > 50) prevSlide()
+  moveX = e.touches[0].clientX - startX
+})
+innerTrack.addEventListener('touchend', () => {
+  if (!isDown) return
+  if (moveX < -50) nextSlide() // свайп влево
+  if (moveX > 50) prevSlide() // свайп вправо
   startAuto()
   isDown = false
 })
