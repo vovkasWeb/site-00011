@@ -154,7 +154,7 @@ for (let i = 0; i < 3; i++) {
 slides = document.querySelectorAll('.inner-slide')
 
 let current = 0
-let slidesPerView = 3 // По умолчанию 3 слайда
+let slidesPerView = 3
 let slideWidth
 let autoSlide
 let isAnimating = false
@@ -163,6 +163,7 @@ let startX = 0
 
 // Определяем количество слайдов в зависимости от ширины экрана
 function updateSlidesPerView() {
+	const prevSlidesPerView = slidesPerView
 	if (window.innerWidth <= 650) {
 		slidesPerView = 1
 	} else if (window.innerWidth < 900) {
@@ -171,15 +172,23 @@ function updateSlidesPerView() {
 		slidesPerView = 3
 	}
 	slideWidth = 100 / slidesPerView
+
+	// Сбрасываем позицию при изменении slidesPerView
+	if (prevSlidesPerView !== slidesPerView) {
+		current = 0
+		updateInnerSlider(false)
+	}
+	console.log(`Slides per view: ${slidesPerView}, Slide width: ${slideWidth}%`)
 }
 
 // Обновление позиции слайдера
 function updateInnerSlider(animate = true) {
 	innerTrack.style.transition = animate ? 'transform 0.5s ease' : 'none'
 	innerTrack.style.transform = `translateX(-${current * slideWidth}%)`
+	console.log(`Current slide: ${current}, Transform: -${current * slideWidth}%`)
 }
 
-// Управление прогресс-баром
+// Прогресс-бар
 function startProgress() {
 	progress.style.transition = 'none'
 	progress.style.width = '0'
@@ -191,12 +200,14 @@ function startProgress() {
 
 // Переход к следующему слайду
 function nextSlide() {
-	if (isAnimating) return
+	if (isAnimating) {
+		console.log('Animation in progress, ignoring nextSlide')
+		return
+	}
 	isAnimating = true
 	current++
 	updateInnerSlider()
 
-	// Если достигли конца, возвращаемся к началу
 	if (current >= slides.length - slidesPerView) {
 		setTimeout(() => {
 			current = 0
@@ -204,14 +215,20 @@ function nextSlide() {
 			isAnimating = false
 		}, 500)
 	} else {
-		setTimeout(() => (isAnimating = false), 500)
+		setTimeout(() => {
+			isAnimating = false
+		}, 500)
 	}
 	startProgress()
+	console.log('Next slide triggered')
 }
 
 // Переход к предыдущему слайду
 function prevSlide() {
-	if (isAnimating) return
+	if (isAnimating) {
+		console.log('Animation in progress, ignoring prevSlide')
+		return
+	}
 	isAnimating = true
 	current--
 	if (current < 0) {
@@ -219,19 +236,24 @@ function prevSlide() {
 		updateInnerSlider(false)
 	}
 	updateInnerSlider()
-	setTimeout(() => (isAnimating = false), 500)
+	setTimeout(() => {
+		isAnimating = false
+	}, 500)
 	startProgress()
+	console.log('Previous slide triggered')
 }
 
-// Автоматическое переключение слайдов
+// Автоматическое переключение
 function startAuto() {
-	stopAuto() // Очищаем предыдущий интервал
+	stopAuto()
 	autoSlide = setInterval(nextSlide, 5000)
 	startProgress()
+	console.log('Auto slide started')
 }
 
 function stopAuto() {
 	clearInterval(autoSlide)
+	console.log('Auto slide stopped')
 }
 
 // Обработка сенсорных и мышиных событий
@@ -239,15 +261,17 @@ innerTrack.addEventListener('mousedown', e => {
 	isDown = true
 	startX = e.pageX
 	stopAuto()
+	console.log('Mouse down, startX:', startX)
 })
 
 innerTrack.addEventListener('mouseup', e => {
 	if (!isDown) return
-	const diff = e.pageX - startX
-	if (diff < -30) nextSlide() // Свайп влево
-	if (diff > 30) prevSlide() // Свайп вправо
-	startAuto()
 	isDown = false
+	const diff = e.pageX - startX
+	console.log('Mouse up, diff:', diff)
+	if (diff < -20) nextSlide() // Уменьшен порог для большей чувствительности
+	if (diff > 20) prevSlide()
+	startAuto()
 })
 
 innerTrack.addEventListener(
@@ -256,6 +280,7 @@ innerTrack.addEventListener(
 		isDown = true
 		startX = e.touches[0].clientX
 		stopAuto()
+		console.log('Touch start, startX:', startX)
 	},
 	{ passive: true }
 )
@@ -269,23 +294,26 @@ innerTrack.addEventListener(
 		if (Math.abs(diff) > 10) {
 			e.preventDefault() // Блокируем скролл только при значительном свайпе
 		}
+		console.log('Touch move, diff:', diff)
 	},
 	{ passive: false }
 )
 
 innerTrack.addEventListener('touchend', e => {
 	if (!isDown) return
-	const diff = e.changedTouches[0].clientX - startX
-	if (diff < -30) nextSlide() // Свайп влево
-	if (diff > 30) prevSlide() // Свайп вправо
-	startAuto()
 	isDown = false
+	const diff = e.changedTouches[0].clientX - startX
+	console.log('Touch end, diff:', diff)
+	if (diff < -20) nextSlide() // Уменьшен порог для iOS
+	if (diff > 20) prevSlide()
+	startAuto()
 })
 
 innerTrack.addEventListener('touchcancel', () => {
 	if (isDown) {
-		startAuto()
 		isDown = false
+		startAuto()
+		console.log('Touch cancelled')
 	}
 })
 
