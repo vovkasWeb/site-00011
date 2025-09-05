@@ -834,25 +834,11 @@ main .main__wrapper {
 }
 /* 
 slider */
-.slider__wrapper {
-	min-width: 100%;
-	max-height: 412px;
-	height: 100%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: white;
-	cursor: pointer;
+.progress {
+	transition: width 5s linear;
+	will-change: width;
 }
 
-
-.inner-track {
-	display: flex;
-	transition: transform 0.5s ease;
-	width: 100%;
-	overflow: hidden; /* обязательно */
-	box-sizing: border-box;
-}
 .slide-wrapper {
 	padding: 22px;
 	background-color: #1e1f34;
@@ -864,9 +850,8 @@ slider */
 	gap: 20px;
 }
 .inner-slide {
-	flex: 0 0 calc(100% / 3 - 20px); /* вычитаем паддинг */
-	padding: 0 10px;
-	box-sizing: border-box;
+	flex: 0 0 auto; /* фиксированная ширина, не сжимается */
+	box-sizing: border-box; /* padding учитывается в ширине */
 }
 .slide-header img {
 	padding: 10px 20px;
@@ -875,13 +860,19 @@ slider */
 }
 .slider__wrapper,
 .slider__onser {
-  overflow: hidden;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+	overflow: hidden;
+	width: 100%;
+	margin: 0;
+	padding: 0;
 }
 .inner-track {
-  will-change: transform;
+	display: flex;
+	transition: transform 0.5s ease;
+	will-change: transform; /* ускоряет анимацию */
+	backface-visibility: hidden; /* убирает дергание на iOS */
+	-webkit-backface-visibility: hidden;
+	touch-action: pan-x; /* корректная обработка свайпов */
+	overflow: hidden;
 }
 .slide-text {
 	font-weight: 400px;
@@ -938,13 +929,13 @@ slider */
 
 @media (max-width: 900px) {
 	.inner-slide {
-		flex: 0 0 calc(50% - 20px);
+		flex: 0 0 calc(50%);
 	}
 }
 
 @media (max-width: 650px) {
 	.inner-slide {
-		flex: 0 0 calc(100% - 20px);
+		flex: 0 0 calc(100%);
 	}
 	.inner-controls {
 		width: 20%;

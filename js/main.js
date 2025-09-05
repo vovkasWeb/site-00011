@@ -145,36 +145,39 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', () => {
 	const innerTrack = document.getElementById('innerTrack')
 	const progress = document.getElementById('progress')
-	const buttons = document.querySelectorAll('.slide__line-mobile img')
-	const buttonsBottom = document.querySelectorAll('.slider-bottom__btn-mobil')
 	let slides = document.querySelectorAll('.inner-slide')
 
-	// Клонируем первые 3 слайда для бесконечного эффекта
-	for (let i = 0; i < 3; i++) {
-		let clone = slides[i].cloneNode(true)
-		innerTrack.appendChild(clone)
-	}
+	// Клонируем первые и последние слайды для бесконечного эффекта
+	slides.forEach(slide => {
+		const cloneStart = slide.cloneNode(true)
+		const cloneEnd = slide.cloneNode(true)
+		innerTrack.appendChild(cloneEnd)
+		innerTrack.insertBefore(cloneStart, innerTrack.firstChild)
+	})
 	slides = document.querySelectorAll('.inner-slide')
 
-	let current = 0
+	let current = slides.length / 3 // начнем с «оригинального» первого
 	let slidesPerView
 	let slideWidth
 	let autoSlide
 	let isAnimating = false
-	let startX = 0
-	let isDown = false
 
 	function updateSlidesPerView() {
 		if (window.innerWidth <= 650) slidesPerView = 1
 		else if (window.innerWidth < 900) slidesPerView = 2
 		else slidesPerView = 3
-		slideWidth = 100 / slidesPerView
+
+		slideWidth = innerTrack.clientWidth / slidesPerView
+		slides.forEach(slide => {
+			slide.style.flex = `0 0 ${slideWidth}px`
+			slide.style.boxSizing = 'border-box'
+		})
+		updateInnerSlider(false)
 	}
 
 	function updateInnerSlider(animate = true) {
 		innerTrack.style.transition = animate ? 'transform 0.5s ease' : 'none'
-		innerTrack.style.transform = `translate3d(-${current * slideWidth}%, 0, 0)`
-		updateButtons()
+		innerTrack.style.transform = `translate3d(-${current * slideWidth}px, 0, 0)`
 	}
 
 	function startProgress() {
@@ -192,15 +195,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		current++
 		updateInnerSlider()
 
-		if (current >= slides.length - slidesPerView) {
-			setTimeout(() => {
-				current = 0
+		setTimeout(() => {
+			if (current >= slides.length - slidesPerView * 2) {
+				current = slides.length / 3
 				updateInnerSlider(false)
-				isAnimating = false
-			}, 500)
-		} else {
-			setTimeout(() => (isAnimating = false), 500)
-		}
+			}
+			isAnimating = false
+		}, 500)
+
 		startProgress()
 	}
 
@@ -208,12 +210,16 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (isAnimating) return
 		isAnimating = true
 		current--
-		if (current < 0) {
-			current = slides.length - slidesPerView
-			updateInnerSlider(false)
-		}
 		updateInnerSlider()
-		setTimeout(() => (isAnimating = false), 500)
+
+		setTimeout(() => {
+			if (current < slides.length / 3) {
+				current = slides.length - slides.length / 3 - slidesPerView
+				updateInnerSlider(false)
+			}
+			isAnimating = false
+		}, 500)
+
 		startProgress()
 	}
 
@@ -226,69 +232,41 @@ document.addEventListener('DOMContentLoaded', () => {
 		clearInterval(autoSlide)
 	}
 
-	// свайпы
-	const pointerStart = e => {
-		isDown = true
-		startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX
-		stopAuto()
-	}
+	// свайпы мышью и пальцем
+	let startX = 0
+	let isDown = false
 
-	const pointerEnd = e => {
+	innerTrack.addEventListener('mousedown', e => {
+		isDown = true
+		startX = e.pageX
+		stopAuto()
+	})
+	innerTrack.addEventListener('mouseup', e => {
 		if (!isDown) return
-		const endX = e.type.includes('touch')
-			? e.changedTouches[0].clientX
-			: e.clientX
-		const diff = startX - endX
-		if (diff > 50) nextSlide()
-		else if (diff < -50) prevSlide()
+		const diff = e.pageX - startX
+		if (diff < -50) nextSlide()
+		if (diff > 50) prevSlide()
 		startAuto()
 		isDown = false
-	}
-
-	innerTrack.addEventListener('mousedown', pointerStart)
-	innerTrack.addEventListener('mouseup', pointerEnd)
-	innerTrack.addEventListener('touchstart', pointerStart)
-	innerTrack.addEventListener('touchend', pointerEnd)
-
-	// кнопки
-	function updateButtons() {
-		if (!buttons.length) return
-		const index = current % buttons.length
-		buttons.forEach(b => b.classList.remove('active'))
-		buttonsBottom.forEach(b => b.classList.remove('active'))
-		buttons[index].classList.add('active')
-		buttonsBottom[index].classList.add('active')
-	}
-
-	buttons.forEach(btn => {
-		btn.addEventListener('click', () => {
-			current = +btn.dataset.index
-			updateInnerSlider()
-			restartAuto()
-		})
 	})
-
-	buttonsBottom.forEach(btn => {
-		btn.addEventListener('click', () => {
-			current = +btn.dataset.index
-			updateInnerSlider()
-			restartAuto()
-		})
-	})
-
-	function restartAuto() {
+	innerTrack.addEventListener('touchstart', e => {
+		isDown = true
+		startX = e.touches[0].clientX
 		stopAuto()
+	})
+	innerTrack.addEventListener('touchend', e => {
+		if (!isDown) return
+		const diff = e.changedTouches[0].clientX - startX
+		if (diff < -50) nextSlide()
+		if (diff > 50) prevSlide()
 		startAuto()
-	}
-
-	// пересчёт при ресайзе
-	window.addEventListener('resize', () => {
-		updateSlidesPerView()
-		updateInnerSlider(false)
+		isDown = false
 	})
 
-	// запуск
+	// ресайз
+	window.addEventListener('resize', updateSlidesPerView)
+
+	// старт
 	updateSlidesPerView()
-	updateInnerSlider(false)
 	startAuto()
 })
