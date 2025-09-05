@@ -262,8 +262,8 @@ innerTrack.addEventListener('touchstart', e => {
 innerTrack.addEventListener('touchend', e => {
 	if (!isDown) return
 	let diff = e.changedTouches[0].clientX - startX
-	if (diff < -10) nextSlide() // свайп влево
-	else if (diff > 10) prevSlide() // свайп вправо
+	if (diff < -50) nextSlide() // свайп влево
+	else if (diff > 50) prevSlide() // свайп вправо
 	updateInnerSlider()
 	startAuto()
 	isDown = false
