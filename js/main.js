@@ -146,25 +146,32 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', () => {
 	const track = document.getElementById('innerTrack')
 	const progress = document.getElementById('progress')
-	let slides = document.querySelectorAll('.inner-slide')
+	const slides = document.querySelectorAll('.inner-slide')
 
-	let slidesPerView, slideWidth
+	let slidesPerView = 1
+	let slideWidth = 0
 	let current = 0
+	let isDragging = false
+	let startX = 0
 	let autoSlide
 
-	// 🔹 Рассчёт количества видимых слайдов
+	// 🔹 Расчёт количества видимых слайдов и ширины
 	function updateSlidesPerView() {
 		if (window.innerWidth <= 650) slidesPerView = 1
 		else if (window.innerWidth < 900) slidesPerView = 2
 		else slidesPerView = 3
 
-		slideWidth = 100 / slidesPerView
+		slideWidth = track.offsetWidth / slidesPerView
+		slides.forEach(slide => {
+			slide.style.width = `${slideWidth}px`
+		})
+		updateSlider(false)
 	}
 
-	// 🔹 Обновляем слайдер
-	function updateSlider() {
-		track.style.transition = 'transform 0.5s ease'
-		track.style.transform = `translateX(-${current * slideWidth}%)`
+	// 🔹 Обновление позиции слайдера
+	function updateSlider(animate = true) {
+		track.style.transition = animate ? 'transform 0.5s ease' : 'none'
+		track.style.transform = `translateX(-${current * slideWidth}px)`
 	}
 
 	// 🔹 Прогресс-бар
@@ -177,65 +184,59 @@ document.addEventListener('DOMContentLoaded', () => {
 		}, 50)
 	}
 
-	// 🔹 Переход к слайду
+	// 🔹 Перейти к слайду с цикличностью
 	function goTo(index) {
 		current = (index + slides.length) % slides.length
 		updateSlider()
 		startProgress()
 	}
 
-	// 🔹 Следующий слайд
 	function nextSlide() {
 		goTo(current + 1)
 	}
-
-	// 🔹 Предыдущий слайд
 	function prevSlide() {
 		goTo(current - 1)
 	}
 
 	// 🔹 Автопрокрутка
 	function startAuto() {
+		stopAuto()
 		autoSlide = setInterval(nextSlide, 5000)
 		startProgress()
 	}
-
 	function stopAuto() {
 		clearInterval(autoSlide)
 	}
 
-	function restartAuto() {
-		stopAuto()
-		startAuto()
-	}
-
 	// 🔹 Свайпы
-	let startX = 0
-
-	track.addEventListener('touchstart', e => (startX = e.touches[0].clientX))
-	track.addEventListener('touchend', e => {
-		let dx = startX - e.changedTouches[0].clientX
-		if (dx > 50) nextSlide()
-		else if (dx < -50) prevSlide()
-		restartAuto()
+	track.addEventListener('touchstart', e => {
+		isDragging = true
+		startX = e.touches[0].clientX
+		stopAuto()
 	})
 
-	track.addEventListener('mousedown', e => (startX = e.clientX))
-	track.addEventListener('mouseup', e => {
-		let dx = startX - e.clientX
-		if (dx > 50) nextSlide()
-		else if (dx < -50) prevSlide()
-		restartAuto()
+	track.addEventListener('touchmove', e => {
+		if (!isDragging) return
+		const dx = e.touches[0].clientX - startX
+		track.style.transition = 'none'
+		track.style.transform = `translateX(${-current * slideWidth + -dx}px)`
+	})
+
+	track.addEventListener('touchend', e => {
+		if (!isDragging) return
+		const dx = e.changedTouches[0].clientX - startX
+		if (dx < -50) nextSlide()
+		else if (dx > 50) prevSlide()
+		updateSlider()
+		startAuto()
+		isDragging = false
 	})
 
 	// 🔹 Пересчёт при ресайзе
-	window.addEventListener('resize', () => {
-		updateSlidesPerView()
-		updateSlider()
-	})
+	window.addEventListener('resize', updateSlidesPerView)
 
 	// 🔹 Инициализация
 	updateSlidesPerView()
-	updateSlider()
+	updateSlider(false)
 	startAuto()
 })
