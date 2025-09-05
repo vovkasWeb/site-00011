@@ -1,3 +1,4 @@
+
 /* поключения шрифтов */
 @font-face {
 	font-family: 'Gilroy';
@@ -58,18 +59,6 @@ html {
 .btn-yello:hover {
 	box-shadow: 0px 4px 15px 0px #ffc70054;
 	background: #ffcb11;
-
-}
-#innerTrack {
-  touch-action: pan-y;        /* разрешаем вертикальный скролл, блокируем горизонтальный системный жест */
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-/* если внутри есть картинки — чтобы iOS не перетаскивал превью */
-#innerTrack img {
-  -webkit-user-drag: none;
-  user-drag: none;
 }
 
 body {
@@ -97,10 +86,6 @@ main .main__wrapper {
 	min-height: calc(100vh);
 	display: flex;
 	align-items: center; /* по вертикали */
-}
-.slider__onser {
-  overflow: hidden;
-  touch-action: pan-y; /* разрешаем только вертикальные свайпы, горизонтальные обрабатываем сами */
 }
 .header {
 	position: fixed;
