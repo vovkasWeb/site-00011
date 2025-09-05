@@ -145,26 +145,26 @@ document.addEventListener('DOMContentLoaded', function () {
 //slider
 document.addEventListener('DOMContentLoaded', () => {
 	const track = document.getElementById('innerTrack')
+	const slides = Array.from(document.querySelectorAll('.inner-slide'))
 	const progress = document.getElementById('progress')
-	const slides = document.querySelectorAll('.inner-slide')
+	const prevBtn = document.getElementById('prevSlide')
+	const nextBtn = document.getElementById('nextSlide')
 
 	let slidesPerView = 1
 	let slideWidth = 0
 	let current = 0
+	let autoSlide
 	let isDragging = false
 	let startX = 0
-	let autoSlide
 
-	// 🔹 Расчёт количества видимых слайдов и ширины
-	function updateSlidesPerView() {
+	// 🔹 Расчёт ширины слайдов и количества видимых
+	function updateSlides() {
 		if (window.innerWidth <= 650) slidesPerView = 1
 		else if (window.innerWidth < 900) slidesPerView = 2
 		else slidesPerView = 3
 
 		slideWidth = track.offsetWidth / slidesPerView
-		slides.forEach(slide => {
-			slide.style.width = `${slideWidth}px`
-		})
+		slides.forEach(slide => (slide.style.width = `${slideWidth}px`))
 		updateSlider(false)
 	}
 
@@ -176,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// 🔹 Прогресс-бар
 	function startProgress() {
+		if (!progress) return
 		progress.style.transition = 'none'
 		progress.style.width = '0'
 		setTimeout(() => {
@@ -184,59 +185,62 @@ document.addEventListener('DOMContentLoaded', () => {
 		}, 50)
 	}
 
-	// 🔹 Перейти к слайду с цикличностью
+	// 🔹 Переход к слайду с цикличностью
 	function goTo(index) {
 		current = (index + slides.length) % slides.length
 		updateSlider()
 		startProgress()
 	}
 
-	function nextSlide() {
+	function nextSlideFunc() {
 		goTo(current + 1)
 	}
-	function prevSlide() {
+	function prevSlideFunc() {
 		goTo(current - 1)
 	}
 
 	// 🔹 Автопрокрутка
 	function startAuto() {
-		stopAuto()
-		autoSlide = setInterval(nextSlide, 5000)
+		clearInterval(autoSlide)
+		autoSlide = setInterval(nextSlideFunc, 5000)
 		startProgress()
 	}
 	function stopAuto() {
 		clearInterval(autoSlide)
 	}
 
-	// 🔹 Свайпы
+	// 🔹 Свайпы для мобильных
 	track.addEventListener('touchstart', e => {
-		isDragging = true
 		startX = e.touches[0].clientX
 		stopAuto()
+		isDragging = true
 	})
-
-	track.addEventListener('touchmove', e => {
-		if (!isDragging) return
-		const dx = e.touches[0].clientX - startX
-		track.style.transition = 'none'
-		track.style.transform = `translateX(${-current * slideWidth + -dx}px)`
-	})
-
 	track.addEventListener('touchend', e => {
 		if (!isDragging) return
 		const dx = e.changedTouches[0].clientX - startX
-		if (dx < -50) nextSlide()
-		else if (dx > 50) prevSlide()
-		updateSlider()
+		if (dx < -15) nextSlideFunc()
+		else if (dx > 15) prevSlideFunc()
 		startAuto()
 		isDragging = false
 	})
 
-	// 🔹 Пересчёт при ресайзе
-	window.addEventListener('resize', updateSlidesPerView)
+	// 🔹 Кнопки "влево/вправо"
+	if (prevBtn)
+		prevBtn.addEventListener('click', () => {
+			prevSlideFunc()
+			startAuto()
+		})
+	if (nextBtn)
+		nextBtn.addEventListener('click', () => {
+			nextSlideFunc()
+			startAuto()
+		})
+
+	// 🔹 Обновление при ресайзе
+	window.addEventListener('resize', updateSlides)
 
 	// 🔹 Инициализация
-	updateSlidesPerView()
+	updateSlides()
 	updateSlider(false)
 	startAuto()
 })
