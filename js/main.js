@@ -142,139 +142,153 @@ document.addEventListener('DOMContentLoaded', function () {
 })
 
 //slider
-//slider
-const innerTrack = document.getElementById('innerTrack')
-const progress = document.getElementById('progress')
-let slides = document.querySelectorAll('.inner-slide')
+document.addEventListener('DOMContentLoaded', () => {
+	const innerTrack = document.getElementById('innerTrack')
+	const progress = document.getElementById('progress')
+	const buttons = document.querySelectorAll('.slide__line-mobile img')
+	const buttonsBottom = document.querySelectorAll('.slider-bottom__btn-mobil')
+	let slides = document.querySelectorAll('.inner-slide')
 
-// Клонируем первые 3 слайда для бесконечного эффекта
-for (let i = 0; i < 3; i++) {
-	let clone = slides[i].cloneNode(true)
-	innerTrack.appendChild(clone)
-}
-slides = document.querySelectorAll('.inner-slide')
-
-let current = 0
-let slidesPerView
-let slideWidth
-let autoSlide
-let isAnimating = false
-
-function updateSlidesPerView() {
-	if (window.innerWidth <= 650) {
-		slidesPerView = 1
-	} else if (window.innerWidth < 900) {
-		slidesPerView = 2
-	} else {
-		slidesPerView = 3
+	// Клонируем первые 3 слайда для бесконечного эффекта
+	for (let i = 0; i < 3; i++) {
+		let clone = slides[i].cloneNode(true)
+		innerTrack.appendChild(clone)
 	}
-	slideWidth = 100 / slidesPerView
-}
+	slides = document.querySelectorAll('.inner-slide')
 
-// функция сдвига слайдера
-function updateInnerSlider(animate = true) {
-	innerTrack.style.transition = animate ? 'transform 0.5s ease' : 'none'
-	innerTrack.style.transform = `translateX(-${current * slideWidth}%)`
-}
+	let current = 0
+	let slidesPerView
+	let slideWidth
+	let autoSlide
+	let isAnimating = false
+	let startX = 0
+	let isDown = false
 
-// прогресс-бар
-function startProgress() {
-	progress.style.transition = 'none'
-	progress.style.width = '0'
-	setTimeout(() => {
-		progress.style.transition = 'width 5s linear'
-		progress.style.width = '100%'
-	}, 50)
-}
+	function updateSlidesPerView() {
+		if (window.innerWidth <= 650) slidesPerView = 1
+		else if (window.innerWidth < 900) slidesPerView = 2
+		else slidesPerView = 3
+		slideWidth = 100 / slidesPerView
+	}
 
-// переход к следующему слайду
-function nextSlide() {
-	if (isAnimating) return
-	isAnimating = true
-	current++
-	updateInnerSlider()
+	function updateInnerSlider(animate = true) {
+		innerTrack.style.transition = animate ? 'transform 0.5s ease' : 'none'
+		innerTrack.style.transform = `translateX(-${current * slideWidth}%)`
+		updateButtons()
+	}
 
-	if (current >= slides.length - slidesPerView) {
+	function startProgress() {
+		progress.style.transition = 'none'
+		progress.style.width = '0'
 		setTimeout(() => {
-			current = 0
+			progress.style.transition = 'width 5s linear'
+			progress.style.width = '100%'
+		}, 50)
+	}
+
+	function nextSlide() {
+		if (isAnimating) return
+		isAnimating = true
+		current++
+		updateInnerSlider()
+
+		if (current >= slides.length - slidesPerView) {
+			setTimeout(() => {
+				current = 0
+				updateInnerSlider(false)
+				isAnimating = false
+			}, 500)
+		} else {
+			setTimeout(() => (isAnimating = false), 500)
+		}
+		startProgress()
+	}
+
+	function prevSlide() {
+		if (isAnimating) return
+		isAnimating = true
+		current--
+		if (current < 0) {
+			current = slides.length - slidesPerView
 			updateInnerSlider(false)
-			isAnimating = false
-		}, 500)
-	} else {
+		}
+		updateInnerSlider()
 		setTimeout(() => (isAnimating = false), 500)
+		startProgress()
 	}
 
-	startProgress()
-}
+	function startAuto() {
+		autoSlide = setInterval(nextSlide, 5000)
+		startProgress()
+	}
 
-// переход к предыдущему слайду
-function prevSlide() {
-	if (isAnimating) return
-	isAnimating = true
-	current--
-	if (current < 0) {
-		current = slides.length - slidesPerView
+	function stopAuto() {
+		clearInterval(autoSlide)
+	}
+
+	// свайпы
+	const pointerStart = e => {
+		isDown = true
+		startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX
+		stopAuto()
+	}
+
+	const pointerEnd = e => {
+		if (!isDown) return
+		const endX = e.type.includes('touch')
+			? e.changedTouches[0].clientX
+			: e.clientX
+		const diff = startX - endX
+		if (diff > 50) nextSlide()
+		else if (diff < -50) prevSlide()
+		startAuto()
+		isDown = false
+	}
+
+	innerTrack.addEventListener('mousedown', pointerStart)
+	innerTrack.addEventListener('mouseup', pointerEnd)
+	innerTrack.addEventListener('touchstart', pointerStart)
+	innerTrack.addEventListener('touchend', pointerEnd)
+
+	// кнопки
+	function updateButtons() {
+		if (!buttons.length) return
+		const index = current % buttons.length
+		buttons.forEach(b => b.classList.remove('active'))
+		buttonsBottom.forEach(b => b.classList.remove('active'))
+		buttons[index].classList.add('active')
+		buttonsBottom[index].classList.add('active')
+	}
+
+	buttons.forEach(btn => {
+		btn.addEventListener('click', () => {
+			current = +btn.dataset.index
+			updateInnerSlider()
+			restartAuto()
+		})
+	})
+
+	buttonsBottom.forEach(btn => {
+		btn.addEventListener('click', () => {
+			current = +btn.dataset.index
+			updateInnerSlider()
+			restartAuto()
+		})
+	})
+
+	function restartAuto() {
+		stopAuto()
+		startAuto()
+	}
+
+	// пересчёт при ресайзе
+	window.addEventListener('resize', () => {
+		updateSlidesPerView()
 		updateInnerSlider(false)
-	}
-	updateInnerSlider()
-	setTimeout(() => (isAnimating = false), 500)
+	})
 
-	startProgress()
-}
-
-// авто-слайд
-function startAuto() {
-	autoSlide = setInterval(nextSlide, 5000)
-	startProgress()
-}
-
-function stopAuto() {
-	clearInterval(autoSlide)
-}
-
-// свайпы
-let startX = 0
-let isDown = false
-
-innerTrack.addEventListener('mousedown', e => {
-	isDown = true
-	startX = e.pageX
-	stopAuto()
-})
-
-innerTrack.addEventListener('mouseup', e => {
-	if (!isDown) return
-	let diff = e.pageX - startX
-	if (diff < -50) nextSlide() // влево
-	if (diff > 50) prevSlide() // вправо
-	updateInnerSlider()
-	startAuto()
-	isDown = false
-})
-
-innerTrack.addEventListener('touchstart', e => {
-	isDown = true
-	startX = e.touches[0].clientX
-	stopAuto()
-})
-
-innerTrack.addEventListener('touchend', e => {
-	if (!isDown) return
-	let diff = e.changedTouches[0].clientX - startX
-	if (diff < -50) nextSlide() // свайп влево
-	if (diff > 50) prevSlide() // свайп вправо
-	updateInnerSlider()
-	startAuto()
-	isDown = false
-})
-
-// пересчёт при ресайзе
-window.addEventListener('resize', () => {
+	// запуск
 	updateSlidesPerView()
 	updateInnerSlider(false)
+	startAuto()
 })
-
-// запуск
-updateSlidesPerView()
-updateInnerSlider(false)
-startAuto()
