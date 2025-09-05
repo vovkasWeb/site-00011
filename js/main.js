@@ -229,131 +229,160 @@ function prevSlide() {
   startProgress()
 }
 
+//slider
+const innerTrack = document.getElementById('innerTrack')
+const progress = document.getElementById('progress')
+let slides = document.querySelectorAll('.inner-slide')
+
+// Клонируем первые 3 в конец
+for (let i = 0; i < 3; i++) {
+  let clone = slides[i].cloneNode(true)
+  innerTrack.appendChild(clone)
+}
+// Клонируем последние 3 в начало
+for (let i = slides.length - 3; i < slides.length; i++) {
+  let clone = slides[i].cloneNode(true)
+  innerTrack.insertBefore(clone, innerTrack.firstChild)
+}
+
+slides = document.querySelectorAll('.inner-slide')
+
+let current = 3 // начинаем с "реального" первого слайда
+let slidesPerView
+let slideWidth
+let autoSlide
+let isAnimating = false
+
+function updateSlidesPerView() {
+  if (window.innerWidth <= 650) {
+    slidesPerView = 1
+  } else if (window.innerWidth < 900) {
+    slidesPerView = 2
+  } else {
+    slidesPerView = 3
+  }
+  slideWidth = 100 / slidesPerView
+}
+
+// функция сдвига слайдера
+function updateInnerSlider(animate = true) {
+  innerTrack.style.transition = animate ? 'transform 0.5s ease' : 'none'
+  innerTrack.style.transform = `translateX(-${current * slideWidth}%)`
+}
+
+// прогресс-бар
+function startProgress() {
+  progress.style.transition = 'none'
+  progress.style.width = '0'
+  setTimeout(() => {
+    progress.style.transition = 'width 5s linear'
+    progress.style.width = '100%'
+  }, 50)
+}
+
+function nextSlide() {
+  if (isAnimating) return
+  isAnimating = true
+  current++
+  updateInnerSlider()
+
+  setTimeout(() => {
+    if (current >= slides.length - 3) {
+      current = 3
+      updateInnerSlider(false)
+    }
+    isAnimating = false
+  }, 500)
+
+  startProgress()
+}
+
+function prevSlide() {
+  if (isAnimating) return
+  isAnimating = true
+  current--
+  updateInnerSlider()
+
+  setTimeout(() => {
+    if (current < 3) {
+      current = slides.length - 3 - 1
+      updateInnerSlider(false)
+    }
+    isAnimating = false
+  }, 500)
+
+  startProgress()
+}
+
 // авто-слайд
 function startAuto() {
-  stopAuto()
   autoSlide = setInterval(nextSlide, 5000)
   startProgress()
 }
 function stopAuto() {
-  if (autoSlide) clearInterval(autoSlide)
-  autoSlide = null
+  clearInterval(autoSlide)
 }
 
-// --- Свайпы: Pointer Events (если есть) + fallback на Touch ---
-const SWIPE_THRESHOLD = 50
+// --- свайпы ---
 let startX = 0
 let startY = 0
-let isPointerDown = false
-let isDragging = false
+let isDown = false
 let moved = false
 
-function onPointerDown(e) {
-  isPointerDown = true
-  isDragging = false
-  moved = false
-  startX = e.clientX
-  startY = e.clientY
+// ПК (мышь)
+innerTrack.addEventListener('mousedown', e => {
+  isDown = true
+  startX = e.pageX
   stopAuto()
-  // попытка захватить pointer (чтобы получать move/up даже если указатель уедет)
-  try { e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId) } catch (err) {}
-}
-function onPointerMove(e) {
-  if (!isPointerDown) return
-  const dx = e.clientX - startX
-  const dy = e.clientY - startY
-
-  // только если горизонталь > вертикаль — считаем это свайпом
-  if (!isDragging && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
-    isDragging = true
-  }
-
-  if (isDragging) {
-    // предотвращаем скролл страницы горизонтальным свайпом
-    e.preventDefault()
-    moved = true
-  }
-}
-function onPointerUp(e) {
-  if (!isPointerDown) return
-  const dx = e.clientX - startX
-  if (dx < -SWIPE_THRESHOLD) nextSlide()
-  else if (dx > SWIPE_THRESHOLD) prevSlide()
-
+})
+innerTrack.addEventListener('mouseup', e => {
+  if (!isDown) return
+  let diff = e.pageX - startX
+  if (diff < -50) nextSlide()
+  if (diff > 50) prevSlide()
   startAuto()
-  isPointerDown = false
-  isDragging = false
-  try { e.target.releasePointerCapture && e.target.releasePointerCapture(e.pointerId) } catch (err) {}
-}
-function onPointerCancel() {
-  isPointerDown = false
-  isDragging = false
-  startAuto()
-}
+  isDown = false
+})
 
-// fallback (touch)
-function onTouchStart(e) {
-  isPointerDown = true
-  isDragging = false
+// Моб (iPhone + Android)
+innerTrack.addEventListener('touchstart', e => {
+  isDown = true
   moved = false
   startX = e.touches[0].clientX
   startY = e.touches[0].clientY
   stopAuto()
-}
-function onTouchMove(e) {
-  if (!isPointerDown) return
+}, { passive: true })
+
+innerTrack.addEventListener('touchmove', e => {
+  if (!isDown) return
   const dx = e.touches[0].clientX - startX
   const dy = e.touches[0].clientY - startY
+
   if (Math.abs(dx) > Math.abs(dy)) {
-    // горизонтальный свайп — блокируем вертикальный перенос страницы
-    e.preventDefault()
+    e.preventDefault() // блокируем вертикальный скролл, если свайп по X
     moved = true
   }
-}
-function onTouchEnd(e) {
-  if (!isPointerDown) return
+}, { passive: false })
+
+innerTrack.addEventListener('touchend', e => {
+  if (!isDown) return
   const endX = e.changedTouches[0].clientX
-  const dx = endX - startX
-  if (dx < -SWIPE_THRESHOLD) nextSlide()
-  else if (dx > SWIPE_THRESHOLD) prevSlide()
+  const diff = endX - startX
+
+  if (diff < -50) nextSlide() // свайп влево
+  if (diff > 50) prevSlide() // свайп вправо
 
   startAuto()
-  isPointerDown = false
-  isDragging = false
-}
+  isDown = false
+})
 
-// attach listeners
-if (window.PointerEvent) {
-  innerTrack.addEventListener('pointerdown', onPointerDown, { passive: false })
-  innerTrack.addEventListener('pointermove', onPointerMove, { passive: false })
-  innerTrack.addEventListener('pointerup', onPointerUp, { passive: false })
-  innerTrack.addEventListener('pointercancel', onPointerCancel)
-  innerTrack.addEventListener('lostpointercapture', onPointerCancel)
-} else {
-  // touch fallback — touchmove must be passive: false чтобы preventDefault работал
-  innerTrack.addEventListener('touchstart', onTouchStart, { passive: true })
-  innerTrack.addEventListener('touchmove', onTouchMove, { passive: false })
-  innerTrack.addEventListener('touchend', onTouchEnd, { passive: false })
-  innerTrack.addEventListener('touchcancel', onPointerCancel, { passive: true })
-}
-
-// предотвращаем срабатывание click при свайпе (чтобы ссылки не открывались)
+// защита от клика по ссылкам при свайпе
 innerTrack.addEventListener('click', e => {
   if (moved) {
     e.preventDefault()
     e.stopPropagation()
   }
 }, true)
-
-// Если у тебя были mouse-события (mousedown/mouseup) — они покрываются Pointer Events.
-// Но на всякий случай добавим mouseleave чтобы сбросить состояние при уходе курсора:
-innerTrack.addEventListener('mouseleave', () => {
-  if (isPointerDown) {
-    isPointerDown = false
-    isDragging = false
-    startAuto()
-  }
-})
 
 // пересчёт при ресайзе
 window.addEventListener('resize', () => {

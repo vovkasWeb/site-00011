@@ -66,7 +66,6 @@ html {
   user-select: none;
   -webkit-user-drag: none;
 }
-
 /* если внутри есть картинки — чтобы iOS не перетаскивал превью */
 #innerTrack img {
   -webkit-user-drag: none;
@@ -98,6 +97,10 @@ main .main__wrapper {
 	min-height: calc(100vh);
 	display: flex;
 	align-items: center; /* по вертикали */
+}
+.slider__onser {
+  overflow: hidden;
+  touch-action: pan-y; /* разрешаем только вертикальные свайпы, горизонтальные обрабатываем сами */
 }
 .header {
 	position: fixed;
