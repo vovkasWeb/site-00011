@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function updateInnerSlider(animate = true) {
 		innerTrack.style.transition = animate ? 'transform 0.5s ease' : 'none'
-		innerTrack.style.transform = `translateX(-${current * slideWidth}%)`
+		innerTrack.style.transform = `translate3d(-${current * slideWidth}%, 0, 0)`
 		updateButtons()
 	}
 
