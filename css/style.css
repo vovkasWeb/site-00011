@@ -61,7 +61,16 @@ html {
 
 }
 #innerTrack {
-  touch-action: pan-y;
+  touch-action: pan-y;        /* разрешаем вертикальный скролл, блокируем горизонтальный системный жест */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* если внутри есть картинки — чтобы iOS не перетаскивал превью */
+#innerTrack img {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 body {
