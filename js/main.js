@@ -237,6 +237,7 @@ function stopAuto() {
 let startX = 0
 let isDown = false
 
+
 innerTrack.addEventListener('mousedown', e => {
 	isDown = true
 	startX = e.pageX
@@ -253,17 +254,29 @@ innerTrack.addEventListener('mouseup', e => {
 	isDown = false
 })
 
-innerTrack.addEventListener('touchstart', e => {
-	isDown = true
-	startX = e.touches[0].clientX
-	stopAuto()
-})
+innerTrack.addEventListener(
+	'touchstart',
+	e => {
+		isDown = true
+		startX = e.touches[0].clientX
+	},
+	{ passive: true }
+)
+
+innerTrack.addEventListener(
+	'touchmove',
+	e => {
+		if (!isDown) return
+		e.preventDefault() // блокируем скролл
+	},
+	{ passive: false }
+)
 
 innerTrack.addEventListener('touchend', e => {
 	if (!isDown) return
 	let diff = e.changedTouches[0].clientX - startX
-	if (diff < -50) nextSlide() // свайп влево
-	else if (diff > 50) prevSlide() // свайп вправо
+	if (diff < -50) nextSlide()
+	if (diff > 50) prevSlide()
 	updateInnerSlider()
 	startAuto()
 	isDown = false
